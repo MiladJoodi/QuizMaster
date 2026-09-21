@@ -1,10 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Clock, Users, Star, BookOpen } from "lucide-react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Clock, BookOpen, Star, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, getDifficultyColor } from "@/lib/utils";
 import { Quiz, QuizCategory } from "@/lib/types";
@@ -15,52 +12,51 @@ interface QuizCardProps {
   index?: number;
 }
 
-export function QuizCard({ quiz, category, index = 0 }: QuizCardProps) {
+export function QuizCard({ quiz, category }: QuizCardProps) {
   const router = useRouter();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05, ease: "easeOut" as const }}
-    >
-      <Card className="group overflow-hidden transition-all hover:shadow-lg hover:border-primary/20">
-        {/* Color bar at top */}
-        <div className={cn("h-1.5", category?.color ?? "bg-primary")} />
-        <CardContent className="p-5">
-          <div className="mb-3 flex items-start justify-between">
-            <Badge variant="outline" className="text-xs">{category?.name ?? "General"}</Badge>
-            <Badge className={cn("text-xs", getDifficultyColor(quiz.difficulty))}>{quiz.difficulty}</Badge>
-          </div>
-          <h3 className="mb-2 text-lg font-semibold leading-tight group-hover:text-primary transition-colors">
-            {quiz.title}
-          </h3>
-          <p className="mb-4 text-sm text-muted-foreground line-clamp-2">{quiz.description}</p>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <BookOpen className="h-3.5 w-3.5" />
-              {quiz.totalQuestions} questions
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" />
-              {quiz.timeLimit} min
-            </span>
-            <span className="flex items-center gap-1">
-              <Users className="h-3.5 w-3.5" />
-              {quiz.attempts} attempts
-            </span>
-            <span className="flex items-center gap-1">
-              <Star className="h-3.5 w-3.5 text-yellow-500" />
-              {quiz.rating}
-            </span>
-          </div>
-        </CardContent>
-        <CardFooter className="border-t border-border px-5 py-3">
-          <Button className="w-full" onClick={() => router.push(`/quiz/${quiz.id}`)}>
-            Start Quiz
-          </Button>
-        </CardFooter>
-      </Card>
-    </motion.div>
+    <article className="group flex h-full flex-col overflow-hidden rounded-xl border-[3px] border-border bg-raised transition-all hover:-translate-x-1 hover:-translate-y-1 hover:border-primary hover:shadow-[6px_6px_0_0_var(--acid)]">
+      <div className="h-2 bg-primary" />
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <span className="text-meta">{category?.name ?? "General"}</span>
+          <span
+            className={cn(
+              "rounded-md border-2 px-2 py-0.5 text-[10px] font-bold uppercase",
+              getDifficultyColor(quiz.difficulty)
+            )}
+          >
+            {quiz.difficulty}
+          </span>
+        </div>
+        <h3 className="font-display text-lg leading-snug text-foreground group-hover:text-primary">
+          {quiz.title}
+        </h3>
+        <p className="mt-2 line-clamp-2 flex-1 text-sm font-semibold text-muted-foreground">
+          {quiz.description}
+        </p>
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <BookOpen className="h-3.5 w-3.5 text-acid" />
+            {quiz.totalQuestions}Q
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5 text-spark" />
+            {quiz.timeLimit}m
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Star className="h-3.5 w-3.5 text-signal" />
+            {quiz.rating}
+          </span>
+        </div>
+      </div>
+      <div className="border-t-[3px] border-border p-3">
+        <Button className="w-full" onClick={() => router.push(`/quiz/${quiz.id}`)}>
+          <Play className="mr-2 h-4 w-4" />
+          Play
+        </Button>
+      </div>
+    </article>
   );
 }

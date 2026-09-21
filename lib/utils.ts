@@ -73,21 +73,21 @@ export function shuffleArray<T>(array: T[]): T[] {
 }
 
 export function getGrade(percentage: number): { grade: string; color: string; label: string } {
-  if (percentage >= 90) return { grade: 'A+', color: 'text-emerald-500', label: 'Excellent' };
-  if (percentage >= 80) return { grade: 'A', color: 'text-emerald-500', label: 'Great' };
-  if (percentage >= 70) return { grade: 'B', color: 'text-blue-500', label: 'Good' };
-  if (percentage >= 60) return { grade: 'C', color: 'text-yellow-500', label: 'Average' };
-  if (percentage >= 50) return { grade: 'D', color: 'text-orange-500', label: 'Below Average' };
-  return { grade: 'F', color: 'text-red-500', label: 'Needs Improvement' };
+  if (percentage >= 90) return { grade: 'A+', color: 'text-success', label: 'Excellent' };
+  if (percentage >= 80) return { grade: 'A', color: 'text-success', label: 'Great' };
+  if (percentage >= 70) return { grade: 'B', color: 'text-primary', label: 'Good' };
+  if (percentage >= 60) return { grade: 'C', color: 'text-signal', label: 'Average' };
+  if (percentage >= 50) return { grade: 'D', color: 'text-signal', label: 'Below Average' };
+  return { grade: 'F', color: 'text-destructive', label: 'Needs Improvement' };
 }
 
 export function getDifficultyColor(difficulty: string): string {
   switch (difficulty) {
-    case 'easy': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
-    case 'medium': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
-    case 'hard': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
-    case 'expert': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-    default: return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
+    case 'easy': return 'border-success/30 bg-success/10 text-success';
+    case 'medium': return 'border-signal/30 bg-signal/10 text-signal';
+    case 'hard': return 'border-destructive/30 bg-destructive/10 text-destructive';
+    case 'expert': return 'border-foreground/20 bg-foreground/5 text-foreground';
+    default: return 'border-border bg-inset text-muted-foreground';
   }
 }
 

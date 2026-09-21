@@ -1,22 +1,30 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bungee, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const space = Space_Grotesk({
+  variable: "--font-space",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const bungee = Bungee({
+  variable: "--font-bungee",
   subsets: ["latin"],
+  weight: ["400"],
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Quez - Online Quiz Platform",
-  description: "Take quizzes, track your progress, and compete on the leaderboard",
+  title: "Quez — NEON RUSH",
+  description: "Arcade quiz battles. Score hard. Climb the board.",
 };
 
 export default function RootLayout({
@@ -25,16 +33,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body
+        className={`${space.variable} ${bungee.variable} ${jetbrains.variable} antialiased`}
+      >
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           {children}
-          <Toaster richColors position="top-right" />
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              className: "font-sans font-bold",
+              style: {
+                background: "var(--raised)",
+                color: "var(--foreground)",
+                border: "2px solid var(--primary)",
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

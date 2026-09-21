@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +10,6 @@ import {
   Trash2,
   Save,
   ArrowLeft,
-  GripVertical,
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,8 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { categories } from "@/lib/data";
 import { generateId } from "@/lib/utils";
 
@@ -150,11 +146,7 @@ export default function CreateQuizPage() {
 
   return (
     <DashboardLayout pageTitle="Create Quiz">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" as const }}
-      >
+      <>
         <Button variant="ghost" className="mb-4" onClick={() => router.push("/quizzes")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Quizzes
@@ -290,10 +282,10 @@ export default function CreateQuizPage() {
                               <button
                                 type="button"
                                 onClick={() => setCorrectOption(question.id, option.id)}
-                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                                className={`flex h-8 w-8 shrink-0 items-center justify-center border-2 transition-colors ${
                                   option.isCorrect
-                                    ? "border-emerald-500 bg-emerald-500 text-white"
-                                    : "border-border hover:border-emerald-300"
+                                    ? "border-success bg-success text-success-foreground"
+                                    : "border-border hover:border-primary/40"
                                 }`}
                               >
                                 {option.isCorrect && <CheckCircle2 className="h-4 w-4" />}
@@ -332,7 +324,7 @@ export default function CreateQuizPage() {
             </Button>
           </div>
         </form>
-      </motion.div>
+      </>
     </DashboardLayout>
   );
 }

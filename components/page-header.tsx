@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Menu,
   Search,
@@ -17,10 +17,9 @@ import {
 import { useUIStore } from "@/store/ui-store";
 import { useAuthStore } from "@/store/auth-store";
 import { useNotificationStore } from "@/store/notification-store";
-import { cn, getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -58,56 +57,46 @@ export function PageHeader({ title }: PageHeaderProps) {
     router.push("/login");
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
-
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/80 px-4 backdrop-blur-md sm:px-6">
-      {/* Mobile Hamburger */}
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b-[3px] border-border bg-raised/95 px-4 backdrop-blur-md sm:px-6">
       <Button
         variant="ghost"
         size="icon"
-        className="shrink-0 lg:hidden"
+        className="h-11 w-11 shrink-0 lg:hidden"
         onClick={toggleMobileSidebar}
       >
         <Menu className="h-5 w-5" />
-        <span className="sr-only">Toggle sidebar</span>
       </Button>
 
-      {/* Title */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+      <div className="min-w-0 flex-1">
+        <h1 className="truncate font-display text-lg font-bold tracking-tight sm:text-xl">
           {title}
         </h1>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2">
-        {/* Search */}
+      <div className="flex items-center gap-1.5">
         <AnimatePresence>
           {searchOpen && (
             <motion.div
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 240, opacity: 1 }}
+              animate={{ width: 220, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2, ease: "easeInOut" as const }}
               className="overflow-hidden"
             >
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search..."
+                  placeholder="Search…"
                   value={globalSearchQuery}
                   onChange={(e) => setGlobalSearchQuery(e.target.value)}
-                  className="h-9 pl-9 pr-8"
+                  className="h-10 pl-9 pr-9"
                   autoFocus
                 />
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-0 top-0 h-9 w-9"
+                  className="absolute right-0 top-0 h-10 w-10"
                   onClick={toggleSearch}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -117,22 +106,18 @@ export function PageHeader({ title }: PageHeaderProps) {
           )}
         </AnimatePresence>
 
-        {!searchOpen && (
-          <TooltipProvider>
+        <TooltipProvider>
+          {!searchOpen && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={toggleSearch}>
-                  <Search className="h-5 w-5 text-muted-foreground" />
-                  <span className="sr-only">Search</span>
+                  <Search className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Search</TooltipContent>
             </Tooltip>
-          </TooltipProvider>
-        )}
+          )}
 
-        {/* Notifications */}
-        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -141,81 +126,61 @@ export function PageHeader({ title }: PageHeaderProps) {
                 className="relative"
                 onClick={() => router.push("/notifications")}
               >
-                <Bell className="h-5 w-5 text-muted-foreground" />
+                <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
-                  <Badge
-                    className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold"
-                    variant="destructive"
-                  >
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </Badge>
+                  <span className="absolute right-1 top-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 font-mono-score text-[10px] font-bold text-primary-foreground">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
                 )}
-                <span className="sr-only">Notifications</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              {unreadCount > 0
-                ? `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`
-                : "No new notifications"}
-            </TooltipContent>
+            <TooltipContent>Notifications</TooltipContent>
           </Tooltip>
-        </TooltipProvider>
 
-        {/* Theme Toggle */}
-        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                <Sun className="h-5 w-5 rotate-0 scale-100 text-muted-foreground transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-5 w-5 rotate-90 scale-0 text-muted-foreground transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              >
+                <Sun className="h-4 w-4 rotate-0 scale-100 dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-4 w-4 rotate-90 scale-0 dark:rotate-0 dark:scale-100" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Toggle theme</TooltipContent>
+            <TooltipContent>Theme</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
-        {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative h-9 w-9 rounded-full"
-            >
-              <Avatar className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="rounded-xl">
+              <Avatar className="h-8 w-8 rounded-xl">
                 {user?.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
-                <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                <AvatarFallback className="rounded-xl bg-primary font-display text-xs font-extrabold text-primary-foreground">
                   {user ? getInitials(user.name) : "?"}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end" className="w-56 rounded-2xl border-2">
             <DropdownMenuLabel>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{user?.name ?? "User"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {user?.email ?? "user@example.com"}
-                </p>
-              </div>
+              <p className="font-display font-bold">{user?.name}</p>
+              <p className="text-xs font-medium text-muted-foreground">{user?.email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/profile")}>
-              <User className="mr-2 h-4 w-4" />
-              Profile
+              <User className="mr-2 h-4 w-4" /> Profile
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/settings")}>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+              <Settings className="mr-2 h-4 w-4" /> Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleLogout}
               className="text-destructive focus:text-destructive"
             >
-              <LogOut className="mr-2 h-4 w-4" />
-              Log out
+              <LogOut className="mr-2 h-4 w-4" /> Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

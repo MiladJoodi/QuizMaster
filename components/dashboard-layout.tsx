@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/auth-store";
 import { useUIStore } from "@/store/ui-store";
 import { Sidebar } from "@/components/sidebar";
@@ -29,8 +28,8 @@ export function DashboardLayout({ children, pageTitle }: DashboardLayoutProps) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Redirecting...</p>
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Loading…</p>
         </div>
       </div>
     );
@@ -39,19 +38,16 @@ export function DashboardLayout({ children, pageTitle }: DashboardLayoutProps) {
   return (
     <div className="relative min-h-screen bg-background">
       <Sidebar />
-      <motion.main
-        animate={{
-          paddingLeft: sidebarCollapsed ? 72 : 264,
-        }}
-        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] as const }}
+      <main
         className={cn(
-          "min-h-screen transition-[padding] duration-300 ease-in-out",
-          "max-lg:!pl-0"
+          "min-h-screen transition-[padding] duration-300 ease-out",
+          sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[248px]",
+          "pl-0"
         )}
       >
         {pageTitle && <PageHeader title={pageTitle} />}
-        <div className="p-4 sm:p-6">{children}</div>
-      </motion.main>
+        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+      </main>
     </div>
   );
 }

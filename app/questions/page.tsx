@@ -1,20 +1,17 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
 import {
   Search,
-  Plus,
-  Filter,
   CheckCircle2,
   Database,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { EmptyState } from "@/components/empty-state";
+import { Metric } from "@/components/stat-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -90,43 +87,21 @@ export default function QuestionsPage() {
 
   return (
     <DashboardLayout pageTitle="Question Bank">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" as const }}
-      >
-        {/* Stats */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{questions.length}</p>
-              <p className="text-xs text-muted-foreground">Total Questions</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">
-                {questions.filter((q) => q.type === "multiple-choice").length}
-              </p>
-              <p className="text-xs text-muted-foreground">Multiple Choice</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">
-                {questions.filter((q) => q.type === "true-false").length}
-              </p>
-              <p className="text-xs text-muted-foreground">True/False</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">
-                {questions.filter((q) => q.type === "multi-select").length}
-              </p>
-              <p className="text-xs text-muted-foreground">Multi Select</p>
-            </CardContent>
-          </Card>
+      <>
+        <div className="mb-6 flex flex-wrap gap-x-10 gap-y-4 border-b border-border pb-6">
+          <Metric label="Total" value={questions.length} />
+          <Metric
+            label="Multiple choice"
+            value={questions.filter((q) => q.type === "multiple-choice").length}
+          />
+          <Metric
+            label="True / false"
+            value={questions.filter((q) => q.type === "true-false").length}
+          />
+          <Metric
+            label="Multi select"
+            value={questions.filter((q) => q.type === "multi-select").length}
+          />
         </div>
 
         {/* Filters */}
@@ -178,9 +153,7 @@ export default function QuestionsPage() {
           </div>
         </div>
 
-        {/* Table */}
-        <Card>
-          <CardContent className="p-0">
+        <div className="overflow-x-auto border border-border bg-raised">
             {paginatedQuestions.length > 0 ? (
               <>
                 <Table>
@@ -260,8 +233,7 @@ export default function QuestionsPage() {
                 />
               </div>
             )}
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Question Detail Dialog */}
         <Dialog open={!!selectedQuestion} onOpenChange={() => setSelectedQuestion(null)}>
@@ -280,21 +252,21 @@ export default function QuestionsPage() {
                     <div
                       key={option.id}
                       className={cn(
-                        "flex items-center gap-2 rounded-lg border p-3 text-sm",
-                        option.isCorrect && "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                        "flex items-center gap-2 border p-3 text-sm",
+                        option.isCorrect && "border-success bg-success/10"
                       )}
                     >
                       {option.isCorrect && (
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
                       )}
                       <span>{option.text}</span>
                     </div>
                   ))}
                 </div>
                 {selectedQuestion.explanation && (
-                  <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                    <p className="font-medium">Explanation:</p>
-                    <p>{selectedQuestion.explanation}</p>
+                  <div className="border-l-2 border-primary pl-3 text-sm">
+                    <p className="text-meta mb-1">Explanation</p>
+                    <p className="text-muted-foreground">{selectedQuestion.explanation}</p>
                   </div>
                 )}
                 <div className="flex gap-2">
@@ -308,7 +280,7 @@ export default function QuestionsPage() {
             )}
           </DialogContent>
         </Dialog>
-      </motion.div>
+      </>
     </DashboardLayout>
   );
 }

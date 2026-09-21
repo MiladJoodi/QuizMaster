@@ -3,18 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Brain, Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import { Eye, EyeOff, LogIn, Zap, Skull } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -28,17 +25,22 @@ export default function LoginPage() {
   const login = useAuthStore((state) => state.login);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<LoginForm>({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = (data: LoginForm) => {
     const success = login(data.email, data.password);
     if (success) {
-      toast.success("Welcome back!", { description: "You have been logged in successfully." });
+      toast.success("ENTERING THE ARENA");
       router.push("/dashboard");
     } else {
-      toast.error("Login failed", { description: "Invalid email or password. Please try again." });
+      toast.error("ACCESS DENIED");
     }
   };
 
@@ -47,106 +49,162 @@ export default function LoginPage() {
     setValue("password", "admin123");
     const success = login("admin@example.com", "admin123");
     if (success) {
-      toast.success("Welcome to Quez!", { description: "You're logged in with the demo account." });
+      toast.success("DEMO MODE — GO!");
       router.push("/dashboard");
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" as const }}
-        className="w-full max-w-md"
-      >
-        <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
-            <Brain className="h-8 w-8 text-primary-foreground" />
+    <div className="flex min-h-screen bg-background">
+      <div className="relative hidden w-[50%] flex-col justify-between overflow-hidden border-r-[3px] border-border p-10 lg:flex">
+        <div className="absolute inset-0 hazard-stripe opacity-20" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at 30% 40%, #ff2d9588, transparent 45%), radial-gradient(circle at 80% 80%, #c8ff0044, transparent 40%)",
+          }}
+        />
+        <div className="relative z-10 flex items-center gap-3">
+          <span className="flex h-12 w-12 items-center justify-center rounded-md bg-primary font-display text-xl text-primary-foreground shadow-[4px_4px_0_0_var(--acid)]">
+            Q
+          </span>
+          <div>
+            <span className="block font-display text-2xl text-primary">QUEZ</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-acid">
+              Neon Rush
+            </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Quez</h1>
-          <p className="mt-1 text-muted-foreground">Online Quiz Platform</p>
         </div>
 
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl">Sign in</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    className="pl-9"
-                    {...register("email")}
-                  />
-                </div>
-                {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-              </div>
+        <div className="relative z-10">
+          <p className="skew-label mb-4 inline-block bg-acid px-3 py-1 text-xs font-bold uppercase tracking-widest text-accent-foreground">
+            <Zap className="mr-1 inline h-3 w-3" />
+            Arcade Mode
+          </p>
+          <h2 className="font-display text-4xl leading-[1.15] text-foreground xl:text-5xl">
+            QUIZ
+            <br />
+            <span className="text-primary">HARDER.</span>
+            <br />
+            <span className="text-acid">SCORE</span>
+            <br />
+            LOUDER.
+          </h2>
+          <p className="mt-6 max-w-sm text-base font-bold text-muted-foreground">
+            Timed rounds. Neon boards. Zero chill. This is not another SaaS
+            dashboard.
+          </p>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    className="pl-9 pr-9"
-                    {...register("password")}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full w-9"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-                {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
-              </div>
+        <p className="relative z-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-spark">
+          <Skull className="h-3.5 w-3.5" /> Press start to continue
+        </p>
+      </div>
 
-              <div className="flex items-center justify-end">
-                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
+      <div className="flex flex-1 items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-sm">
+          <div className="mb-8 lg:hidden">
+            <span className="font-display text-3xl text-primary">QUEZ</span>
+            <p className="text-meta !text-acid">Neon Rush</p>
+          </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In
-              </Button>
-            </form>
+          <h1 className="font-display text-3xl text-acid">INSERT COIN</h1>
+          <p className="mt-2 font-bold text-muted-foreground">
+            Sign in to start the round
+          </p>
 
-            <div className="relative my-4">
-              <Separator />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                or
-              </span>
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="font-bold uppercase tracking-wider">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="player@arena.com"
+                className="border-[3px] rounded-md h-12"
+                {...register("email")}
+              />
+              {errors.email && (
+                <p className="text-xs font-bold text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
-            <Button variant="outline" className="w-full" onClick={handleDemoLogin}>
-              Try Demo Account
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="password"
+                  className="font-bold uppercase tracking-wider"
+                >
+                  Password
+                </Label>
+                <Link
+                  href="/forgot-password"
+                  className="cursor-pointer text-xs font-bold uppercase text-primary hover:text-acid"
+                >
+                  Forgot?
+                </Link>
+              </div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  className="border-[3px] rounded-md h-12 pr-12"
+                  {...register("password")}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-12 w-12"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              {errors.password && (
+                <p className="text-xs font-bold text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+              <LogIn className="mr-2 h-4 w-4" />
+              Start
             </Button>
-          </CardContent>
-          <CardFooter className="justify-center">
-            <p className="text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <Link href="/register" className="font-medium text-primary hover:underline">
-                Sign up
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
-      </motion.div>
+          </form>
+
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-[3px] flex-1 bg-border" />
+            <span className="text-meta">OR</span>
+            <div className="h-[3px] flex-1 bg-border" />
+          </div>
+
+          <Button
+            variant="secondary"
+            className="w-full"
+            size="lg"
+            onClick={handleDemoLogin}
+          >
+            <Zap className="mr-2 h-4 w-4" />
+            Demo player
+          </Button>
+
+          <p className="mt-8 text-center text-sm font-bold text-muted-foreground">
+            New?{" "}
+            <Link
+              href="/register"
+              className="cursor-pointer font-bold uppercase text-primary hover:text-acid"
+            >
+              Create player
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -8,23 +8,20 @@ import {
   CheckCircle2,
   XCircle,
   MinusCircle,
-  Clock,
-  Trophy,
   RotateCcw,
   Home,
   ChevronDown,
   ChevronUp,
   Award,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { formatTimer, formatDuration, getGrade, getDifficultyColor } from "@/lib/utils";
+import { formatDuration, getGrade, getDifficultyColor } from "@/lib/utils";
 import { quizzes, questions as allQuestions, quizAttempts, categories } from "@/lib/data";
+import { chartColors, chartTooltipStyle } from "@/components/chart-theme";
 
 export default function QuizResultsPage() {
   const params = useParams();
@@ -48,11 +45,26 @@ export default function QuizResultsPage() {
       .filter((q): q is (typeof allQuestions)[number] => q !== undefined);
   }, [quiz]);
 
-  // Animated score counter
+  const previousAttempt = useMemo(() => {
+    if (!attempt) return null;
+    const prior = quizAttempts
+      .filter(
+        (a) =>
+          a.quizId === quizId &&
+          a.id !== attempt.id &&
+          new Date(a.completedAt).getTime() < new Date(attempt.completedAt).getTime()
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+      );
+    return prior[0] ?? null;
+  }, [attempt, quizId]);
+
   useEffect(() => {
     if (!attempt) return;
-    const duration = 1500;
-    const steps = 60;
+    const duration = 1200;
+    const steps = 48;
     const increment = attempt.percentage / steps;
     let current = 0;
     const timer = setInterval(() => {
@@ -67,11 +79,10 @@ export default function QuizResultsPage() {
     return () => clearInterval(timer);
   }, [attempt]);
 
-  // Show confetti for passed quizzes
   useEffect(() => {
     if (attempt?.passed) {
       setShowConfetti(true);
-      const timer = setTimeout(() => setShowConfetti(false), 5000);
+      const timer = setTimeout(() => setShowConfetti(false), 2800);
       return () => clearTimeout(timer);
     }
   }, [attempt]);
@@ -79,11 +90,8 @@ export default function QuizResultsPage() {
   const toggleQuestion = (questionId: string) => {
     setExpandedQuestions((prev) => {
       const next = new Set(prev);
-      if (next.has(questionId)) {
-        next.delete(questionId);
-      } else {
-        next.add(questionId);
-      }
+      if (next.has(questionId)) next.delete(questionId);
+      else next.add(questionId);
       return next;
     });
   };
@@ -92,10 +100,12 @@ export default function QuizResultsPage() {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <p className="text-lg font-semibold">Results not found</p>
-          <p className="mt-1 text-sm text-muted-foreground">This quiz attempt could not be found.</p>
+          <p className="font-display text-xl font-medium">Results not found</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            This quiz attempt could not be found.
+          </p>
           <Button className="mt-4" onClick={() => router.push("/quizzes")}>
-            Browse Quizzes
+            Browse quizzes
           </Button>
         </div>
       </div>
@@ -104,253 +114,320 @@ export default function QuizResultsPage() {
 
   const grade = getGrade(attempt.percentage);
   const correctCount = attempt.answers.filter((a) => a.isCorrect).length;
-  const incorrectCount = attempt.answers.filter((a) => !a.isCorrect && a.selectedOptions.length > 0).length;
-  const skippedCount = attempt.answers.filter((a) => a.selectedOptions.length === 0).length;
+  const incorrectCount = attempt.answers.filter(
+    (a) => !a.isCorrect && a.selectedOptions.length > 0
+  ).length;
+  const skippedCount = attempt.answers.filter(
+    (a) => a.selectedOptions.length === 0
+  ).length;
+
+  const scoreDelta = previousAttempt
+    ? attempt.percentage - previousAttempt.percentage
+    : null;
 
   const pieData = [
-    { name: "Correct", value: correctCount, fill: "#10b981" },
-    { name: "Incorrect", value: incorrectCount, fill: "#ef4444" },
-    { name: "Skipped", value: skippedCount, fill: "#94a3b8" },
+    { name: "Correct", value: correctCount, fill: chartColors.success },
+    { name: "Incorrect", value: incorrectCount, fill: "var(--destructive)" },
+    { name: "Skipped", value: skippedCount, fill: chartColors.muted },
   ].filter((d) => d.value > 0);
 
   return (
     <div className="min-h-screen bg-background">
-      {showConfetti && <ReactConfetti recycle={false} numberOfPieces={300} />}
+      {showConfetti && (
+        <ReactConfetti
+          recycle={false}
+          numberOfPieces={80}
+          colors={["#fb7185", "#22d3ee", "#fbbf24", "#a78bfa", "#34d399"]}
+        />
+      )}
 
-      <div className="mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
-        {/* Score Hero */}
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Editorial score */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, ease: "easeOut" as const }}
-          className="mb-8 text-center"
-        >
-          <div className="mb-4 inline-flex items-center gap-2">
-            <Badge variant="outline">{category?.name}</Badge>
-            <Badge className={getDifficultyColor(quiz.difficulty)}>{quiz.difficulty}</Badge>
-          </div>
-          <h1 className="mb-2 text-2xl font-bold sm:text-3xl">{quiz.title}</h1>
-
-          {/* Score Circle */}
-          <div className="relative mx-auto my-8 flex h-40 w-40 items-center justify-center">
-            <svg className="absolute h-full w-full -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted" />
-              <motion.circle
-                cx="50"
-                cy="50"
-                r="45"
-                fill="none"
-                stroke={attempt.passed ? "#10b981" : "#ef4444"}
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 45}`}
-                initial={{ strokeDashoffset: 2 * Math.PI * 45 }}
-                animate={{ strokeDashoffset: 2 * Math.PI * 45 * (1 - attempt.percentage / 100) }}
-                transition={{ duration: 1.5, ease: "easeOut" as const }}
-              />
-            </svg>
-            <div className="text-center">
-              <span className={cn("text-4xl font-bold", grade.color)}>{animatedScore}%</span>
-              <p className="text-sm text-muted-foreground">{grade.label}</p>
-            </div>
-          </div>
-
-          {/* Pass/Fail Badge */}
-          <div className="flex items-center justify-center gap-2">
-            {attempt.passed ? (
-              <Badge className="bg-emerald-500 px-4 py-1 text-sm hover:bg-emerald-600">
-                <Trophy className="mr-1 h-4 w-4" />
-                Passed
-              </Badge>
-            ) : (
-              <Badge variant="destructive" className="px-4 py-1 text-sm">
-                <XCircle className="mr-1 h-4 w-4" />
-                Failed
-              </Badge>
-            )}
-            <Badge variant="outline" className="px-4 py-1 text-sm">
-              Grade: {grade.grade}
-            </Badge>
-          </div>
-        </motion.div>
-
-        {/* Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" as const }}
-          className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4"
+          transition={{ duration: 0.35 }}
+          className="mb-10 border-b-2 border-border pb-10"
         >
-          <Card>
-            <CardContent className="p-4 text-center">
-              <CheckCircle2 className="mx-auto mb-1 h-5 w-5 text-emerald-500" />
-              <p className="text-2xl font-bold">{correctCount}</p>
-              <p className="text-xs text-muted-foreground">Correct</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <XCircle className="mx-auto mb-1 h-5 w-5 text-red-500" />
-              <p className="text-2xl font-bold">{incorrectCount}</p>
-              <p className="text-xs text-muted-foreground">Incorrect</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <MinusCircle className="mx-auto mb-1 h-5 w-5 text-slate-400" />
-              <p className="text-2xl font-bold">{skippedCount}</p>
-              <p className="text-xs text-muted-foreground">Skipped</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Clock className="mx-auto mb-1 h-5 w-5 text-primary" />
-              <p className="text-2xl font-bold">{formatDuration(attempt.timeTaken)}</p>
-              <p className="text-xs text-muted-foreground">Time Taken</p>
-            </CardContent>
-          </Card>
+          <p className="text-meta mb-2">
+            {category?.name}
+            <span className="mx-2 text-border">·</span>
+            <span className={cn("inline-flex rounded border px-1.5 py-0.5 capitalize", getDifficultyColor(quiz.difficulty))}>
+              {quiz.difficulty}
+            </span>
+          </p>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+            {quiz.title}
+          </h1>
+
+          <div className="mt-8 flex flex-col items-start gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p
+                className={cn(
+                  "font-display text-7xl font-extrabold tracking-tighter sm:text-8xl",
+                  attempt.passed ? "text-success" : "text-destructive"
+                )}
+              >
+                {animatedScore}
+                <span className="text-4xl text-muted-foreground">%</span>
+              </p>
+              <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="rounded-full bg-primary/15 px-3 py-1 font-display text-lg font-extrabold text-primary">
+                  Grade {grade.grade}
+                </span>
+                <span className="text-sm font-bold text-muted-foreground">{grade.label}</span>
+                <span
+                  className={cn(
+                    "rounded-full px-3 py-1 text-sm font-extrabold",
+                    attempt.passed
+                      ? "bg-success/20 text-success"
+                      : "bg-destructive/20 text-destructive"
+                  )}
+                >
+                  {attempt.passed ? "Victory!" : "Try again"}
+                </span>
+              </div>
+              {scoreDelta !== null && (
+                <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
+                  {scoreDelta >= 0 ? (
+                    <TrendingUp className="h-3.5 w-3.5 text-success" />
+                  ) : (
+                    <TrendingDown className="h-3.5 w-3.5 text-destructive" />
+                  )}
+                  <span className={scoreDelta >= 0 ? "text-success" : "text-destructive"}>
+                    {scoreDelta >= 0 ? "+" : ""}
+                    {scoreDelta}%
+                  </span>
+                  vs previous attempt ({previousAttempt!.percentage}%)
+                </p>
+              )}
+            </div>
+
+            <div className="relative flex h-28 w-28 shrink-0 items-center justify-center">
+              <svg className="absolute h-full w-full -rotate-90" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  fill="none"
+                  stroke="var(--inset)"
+                  strokeWidth="5"
+                />
+                <motion.circle
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  fill="none"
+                  stroke={attempt.passed ? "var(--success)" : "var(--destructive)"}
+                  strokeWidth="5"
+                  strokeLinecap="square"
+                  strokeDasharray={`${2 * Math.PI * 42}`}
+                  initial={{ strokeDashoffset: 2 * Math.PI * 42 }}
+                  animate={{
+                    strokeDashoffset:
+                      2 * Math.PI * 42 * (1 - attempt.percentage / 100),
+                  }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                />
+              </svg>
+            </div>
+          </div>
+
+          {/* Single summary strip */}
+          <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 border-t-2 border-border pt-6 text-sm">
+            <div>
+              <span className="text-meta">Correct</span>
+              <p className="font-mono-score text-lg font-semibold text-success">
+                {correctCount}
+              </p>
+            </div>
+            <div>
+              <span className="text-meta">Incorrect</span>
+              <p className="font-mono-score text-lg font-semibold text-destructive">
+                {incorrectCount}
+              </p>
+            </div>
+            <div>
+              <span className="text-meta">Skipped</span>
+              <p className="font-mono-score text-lg font-semibold text-muted-foreground">
+                {skippedCount}
+              </p>
+            </div>
+            <div>
+              <span className="text-meta">Time</span>
+              <p className="font-mono-score text-lg font-semibold">
+                {formatDuration(attempt.timeTaken)}
+              </p>
+            </div>
+            <div>
+              <span className="text-meta">Passing</span>
+              <p className="font-mono-score text-lg font-semibold">
+                {quiz.passingScore}%
+              </p>
+            </div>
+          </div>
         </motion.div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-          {/* Question Review */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.4, ease: "easeOut" as const }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Question Review</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {questions.map((question, index) => {
-                  const answer = attempt.answers.find((a) => a.questionId === question.id);
-                  const isExpanded = expandedQuestions.has(question.id);
-                  const isCorrect = answer?.isCorrect ?? false;
-                  const isSkipped = !answer || answer.selectedOptions.length === 0;
+        <div className="grid gap-10 lg:grid-cols-[1fr_240px]">
+          {/* Review */}
+          <section>
+            <h2 className="mb-4 font-display text-xl font-extrabold">Round review</h2>
+            <div className="divide-y-2 divide-border overflow-hidden rounded-3xl border-2 border-border bg-raised">
+              {questions.map((question, index) => {
+                const answer = attempt.answers.find((a) => a.questionId === question.id);
+                const isExpanded = expandedQuestions.has(question.id);
+                const isCorrect = answer?.isCorrect ?? false;
+                const isSkipped = !answer || answer.selectedOptions.length === 0;
 
-                  return (
-                    <div key={question.id} className="rounded-lg border border-border">
-                      <button
-                        onClick={() => toggleQuestion(question.id)}
-                        className="flex w-full items-center gap-3 p-3 text-left"
+                return (
+                  <div key={question.id}>
+                    <button
+                      type="button"
+                      onClick={() => toggleQuestion(question.id)}
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-inset/60"
+                    >
+                      <span
+                        className={cn(
+                          "flex h-7 w-7 shrink-0 items-center justify-center",
+                          isCorrect && "bg-success/15 text-success",
+                          !isCorrect && !isSkipped && "bg-destructive/15 text-destructive",
+                          isSkipped && "bg-inset text-muted-foreground"
+                        )}
                       >
-                        <div className={cn(
-                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                          isCorrect && "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
-                          !isCorrect && !isSkipped && "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
-                          isSkipped && "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                        )}>
-                          {isCorrect ? <CheckCircle2 className="h-4 w-4" /> : isSkipped ? <MinusCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">
-                            Q{index + 1}. {question.text}
-                          </p>
-                        </div>
-                        {isExpanded ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
-                      </button>
-
-                      {isExpanded && (
-                        <div className="border-t border-border px-3 pb-3 pt-2">
-                          <p className="mb-3 text-sm">{question.text}</p>
-                          <div className="space-y-2">
-                            {question.options.map((option) => {
-                              const wasSelected = answer?.selectedOptions.includes(option.id) ?? false;
-                              return (
-                                <div
-                                  key={option.id}
-                                  className={cn(
-                                    "rounded-lg border p-2.5 text-sm",
-                                    option.isCorrect && "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20",
-                                    wasSelected && !option.isCorrect && "border-red-500 bg-red-50 dark:bg-red-900/20",
-                                    !option.isCorrect && !wasSelected && "border-border"
-                                  )}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    {option.isCorrect && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
-                                    {wasSelected && !option.isCorrect && <XCircle className="h-3.5 w-3.5 text-red-500" />}
-                                    <span>{option.text}</span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          {question.explanation && (
-                            <div className="mt-3 rounded-lg bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                              <p className="font-medium">Explanation:</p>
-                              <p>{question.explanation}</p>
-                            </div>
-                          )}
-                        </div>
+                        {isCorrect ? (
+                          <CheckCircle2 className="h-4 w-4" />
+                        ) : isSkipped ? (
+                          <MinusCircle className="h-4 w-4" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                        <span className="font-mono-score text-muted-foreground">
+                          {index + 1}.
+                        </span>{" "}
+                        {question.text}
+                      </span>
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                       )}
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          </motion.div>
+                    </button>
 
-          {/* Sidebar - Chart + Actions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.5, ease: "easeOut" as const }}
-            className="space-y-6"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Score Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={4} dataKey="value">
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip
-                        contentStyle={{
-                          backgroundColor: "var(--card)",
-                          borderColor: "var(--border)",
-                          borderRadius: "8px",
-                          fontSize: "12px",
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="mt-2 space-y-2">
-                  {pieData.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.fill }} />
-                        <span>{item.name}</span>
+                    {isExpanded && (
+                      <div className="border-t border-border bg-inset/40 px-4 py-4">
+                        <p className="text-question mb-4 text-base">{question.text}</p>
+                        <div className="space-y-2">
+                          {question.options.map((option) => {
+                            const wasSelected =
+                              answer?.selectedOptions.includes(option.id) ?? false;
+                            return (
+                              <div
+                                key={option.id}
+                                className={cn(
+                                  "border px-3 py-2.5 text-sm",
+                                  option.isCorrect &&
+                                    "border-success bg-success/10 text-foreground",
+                                  wasSelected &&
+                                    !option.isCorrect &&
+                                    "border-destructive bg-destructive/10",
+                                  !option.isCorrect && !wasSelected && "border-border bg-raised"
+                                )}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {option.isCorrect && (
+                                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-success" />
+                                  )}
+                                  {wasSelected && !option.isCorrect && (
+                                    <XCircle className="h-3.5 w-3.5 shrink-0 text-destructive" />
+                                  )}
+                                  <span>{option.text}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {question.explanation && (
+                          <div className="mt-4 border-l-2 border-primary pl-3 text-sm">
+                            <p className="text-meta mb-1">Explanation</p>
+                            <p className="text-muted-foreground">{question.explanation}</p>
+                          </div>
+                        )}
                       </div>
-                      <span className="font-medium">{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
 
-            <div className="space-y-3">
-              <Button className="w-full" onClick={() => { router.push(`/quiz/${quizId}`); }}>
+          <aside className="space-y-6">
+            <div className="rounded-3xl border-2 border-border bg-raised p-4">
+              <p className="text-meta mb-3">Breakdown</p>
+              <div className="h-[160px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={42}
+                      outerRadius={64}
+                      paddingAngle={2}
+                      dataKey="value"
+                      strokeWidth={0}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip contentStyle={chartTooltipStyle} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <ul className="mt-2 space-y-1.5 text-sm">
+                {pieData.map((item) => (
+                  <li key={item.name} className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <span
+                        className="h-2 w-2"
+                        style={{ backgroundColor: item.fill }}
+                      />
+                      {item.name}
+                    </span>
+                    <span className="font-mono-score font-medium">{item.value}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Button
+                className="w-full"
+                onClick={() => router.push(`/quiz/${quizId}`)}
+              >
                 <RotateCcw className="mr-2 h-4 w-4" />
-                Retry Quiz
+                Retry quiz
               </Button>
-              <Button variant="outline" className="w-full" onClick={() => router.push("/quizzes")}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => router.push("/quizzes")}
+              >
                 <Home className="mr-2 h-4 w-4" />
-                Browse Quizzes
+                Browse quizzes
               </Button>
-              <Button variant="outline" className="w-full" onClick={() => router.push("/results")}>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => router.push("/results")}
+              >
                 <Award className="mr-2 h-4 w-4" />
-                View All Results
+                All results
               </Button>
             </div>
-          </motion.div>
+          </aside>
         </div>
       </div>
     </div>

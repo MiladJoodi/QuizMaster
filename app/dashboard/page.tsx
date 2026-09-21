@@ -2,16 +2,13 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import {
   BookOpen,
-  Trophy,
-  Target,
-  TrendingUp,
-  Clock,
   ChevronRight,
-  Star,
   Flame,
+  Trophy,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 import {
   AreaChart,
@@ -21,24 +18,30 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { StatCard } from "@/components/stat-card";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuthStore } from "@/store/auth-store";
-import { quizzes, quizAttempts, categories, achievements, leaderboard } from "@/lib/data";
-import { formatDate, getDifficultyColor, getInitials, formatDuration } from "@/lib/utils";
+import {
+  quizzes,
+  quizAttempts,
+  categories,
+  achievements,
+} from "@/lib/data";
+import {
+  formatDate,
+  getDifficultyColor,
+  formatDuration,
+  cn,
+} from "@/lib/utils";
+import {
+  chartAxisTick,
+  chartGridProps,
+  chartTooltipStyle,
+} from "@/components/chart-theme";
 
-// Performance over time data
 const performanceData = [
   { month: "Sep", score: 65 },
   { month: "Oct", score: 72 },
@@ -49,346 +52,276 @@ const performanceData = [
   { month: "Mar", score: 88 },
 ];
 
-// Category performance data
-const categoryPerformance = [
-  { name: "Science", score: 82, fill: "var(--chart-1)" },
-  { name: "Math", score: 75, fill: "var(--chart-2)" },
-  { name: "Programming", score: 91, fill: "var(--chart-3)" },
-  { name: "History", score: 68, fill: "var(--chart-4)" },
-  { name: "Language", score: 79, fill: "var(--chart-5)" },
-];
-
-// Score distribution for pie chart
-const scoreDistribution = [
-  { name: "90-100%", value: 8, fill: "#10b981" },
-  { name: "70-89%", value: 15, fill: "#3b82f6" },
-  { name: "50-69%", value: 12, fill: "#f59e0b" },
-  { name: "Below 50%", value: 5, fill: "#ef4444" },
-];
-
 export default function DashboardPage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
   const userAttempts = useMemo(() => {
-    return quizAttempts.filter((a) => a.userId === user?.id || a.userId === "user-1");
+    return quizAttempts.filter(
+      (a) => a.userId === user?.id || a.userId === "user-1"
+    );
   }, [user]);
 
   const recentAttempts = useMemo(() => {
     return [...userAttempts]
-      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+      )
       .slice(0, 5);
   }, [userAttempts]);
 
-  const unlockedAchievements = achievements.filter((a) => a.status === "unlocked");
+  const recommended = useMemo(() => {
+    return quizzes
+      .filter((q) => q.status === "published")
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 4);
+  }, []);
+
+  const nextAchievement = achievements.find((a) => a.status === "in-progress");
+  const streak = user?.stats?.streak ?? 0;
 
   return (
-    <DashboardLayout pageTitle="Dashboard">
-      {/* Welcome Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" as const }}
-        className="mb-6"
-      >
-        <Card className="overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Welcome back, {user?.name?.split(" ")[0] ?? "User"}!</h2>
-                <p className="mt-1 text-muted-foreground">
-                  You&apos;re on a {user?.stats?.streak ?? 0}-day streak! Keep it going.
-                </p>
-                <div className="mt-4 flex items-center gap-4">
-                  <Button onClick={() => router.push("/quizzes")}>
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    Browse Quizzes
-                  </Button>
-                  <Button variant="outline" onClick={() => router.push("/leaderboard")}>
-                    <Trophy className="mr-2 h-4 w-4" />
-                    Leaderboard
-                  </Button>
+    <DashboardLayout pageTitle="LOBBY">
+      <section className="neon-box relative mb-8 overflow-hidden rounded-xl bg-raised p-6 sm:p-8">
+        <div className="absolute inset-0 opacity-[0.07] hazard-stripe" />
+        <div className="absolute right-0 top-0 h-full w-2.5 hazard-stripe" />
+        <div
+          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, color-mix(in srgb, var(--primary) 40%, transparent), transparent 70%)",
+          }}
+        />
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="skew-label mb-3 inline-block bg-acid px-3 py-1 text-xs font-bold uppercase tracking-widest text-accent-foreground">
+              <Zap className="mr-1 inline h-3 w-3" />
+              Neon Rush
+            </p>
+            <h2 className="font-display text-3xl leading-none text-primary sm:text-5xl">
+              {user?.name?.split(" ")[0]?.toUpperCase() ?? "PLAYER"}
+            </h2>
+            <p className="mt-3 flex items-center gap-2 text-lg font-bold">
+              <Flame className="h-6 w-6 text-signal drop-shadow-[0_0_8px_var(--signal)]" />
+              <span className="font-display text-4xl text-signal drop-shadow-[0_0_12px_color-mix(in_srgb,var(--signal)_50%,transparent)]">
+                {streak}
+              </span>
+              <span className="text-muted-foreground">DAY STREAK</span>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button size="lg" onClick={() => router.push("/quizzes")}>
+              <BookOpen className="mr-2 h-4 w-4" />
+              Play
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => router.push("/leaderboard")}
+            >
+              <Trophy className="mr-2 h-4 w-4" />
+              Rank
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-10 grid gap-4 sm:grid-cols-3">
+        {[
+          {
+            label: "AVG SCORE",
+            value: `${user?.stats?.averageScore ?? 0}%`,
+            color: "text-acid",
+            shadow: "shadow-[4px_4px_0_0_var(--acid)]",
+          },
+          {
+            label: "RANK",
+            value: `#${user?.stats?.rank ?? "—"}`,
+            color: "text-primary",
+            shadow: "shadow-[4px_4px_0_0_var(--primary)]",
+          },
+          {
+            label: "XP",
+            value: (user?.stats?.totalPoints ?? 0).toLocaleString(),
+            color: "text-spark",
+            shadow: "shadow-[4px_4px_0_0_var(--spark)]",
+          },
+        ].map((m) => (
+          <div
+            key={m.label}
+            className={cn(
+              "rounded-xl border-[3px] border-border bg-raised p-5",
+              m.shadow
+            )}
+          >
+            <p className="text-meta">{m.label}</p>
+            <p className={cn("mt-1 font-display text-4xl", m.color)}>{m.value}</p>
+          </div>
+        ))}
+      </section>
+
+      <div className="grid gap-8 lg:grid-cols-[1.35fr_1fr]">
+        <section>
+          <h2 className="mb-3 font-display text-xl text-acid">SCORE CURVE</h2>
+          <div className="rounded-xl border-[3px] border-border bg-raised p-4 shadow-[4px_4px_0_0_var(--spark)]">
+            <div className="h-[240px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={performanceData}>
+                  <defs>
+                    <linearGradient id="neonFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.5} />
+                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid {...chartGridProps} />
+                  <XAxis dataKey="month" tick={chartAxisTick} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 100]} tick={chartAxisTick} axisLine={false} tickLine={false} width={28} />
+                  <RechartsTooltip
+                    contentStyle={chartTooltipStyle}
+                    formatter={(value: number | undefined) => [`${value ?? 0}%`, "Score"]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="score"
+                    stroke="var(--primary)"
+                    strokeWidth={3}
+                    fill="url(#neonFill)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="mb-3 font-display text-xl text-primary">NEXT UNLOCK</h2>
+          {nextAchievement ? (
+            <div className="neon-lime rounded-xl bg-raised p-5">
+              <p className="text-meta !text-primary">{nextAchievement.category}</p>
+              <h3 className="mt-2 font-display text-lg text-acid">
+                {nextAchievement.title}
+              </h3>
+              <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                {nextAchievement.description}
+              </p>
+              <div className="mt-4">
+                <div className="mb-1.5 flex justify-between text-xs font-bold">
+                  <span className="text-muted-foreground">PROGRESS</span>
+                  <span className="font-mono-score text-acid">
+                    {nextAchievement.progress}/{nextAchievement.maxProgress}
+                  </span>
                 </div>
-              </div>
-              <div className="hidden items-center gap-2 sm:flex">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-                  <Flame className="h-8 w-8 text-primary" />
-                </div>
+                <Progress
+                  value={
+                    (nextAchievement.progress / nextAchievement.maxProgress) * 100
+                  }
+                />
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* KPI Stats */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Quizzes Taken"
-          value={user?.stats?.quizzesTaken ?? 0}
-          icon={BookOpen}
-          change="+3 this week"
-          changeType="positive"
-          index={0}
-        />
-        <StatCard
-          title="Average Score"
-          value={`${user?.stats?.averageScore ?? 0}%`}
-          icon={Target}
-          change="+5% improvement"
-          changeType="positive"
-          index={1}
-        />
-        <StatCard
-          title="Total Points"
-          value={(user?.stats?.totalPoints ?? 0).toLocaleString()}
-          icon={Star}
-          change="+250 this week"
-          changeType="positive"
-          index={2}
-        />
-        <StatCard
-          title="Global Rank"
-          value={`#${user?.stats?.rank ?? "-"}`}
-          icon={Trophy}
-          change="Up 2 positions"
-          changeType="positive"
-          index={3}
-        />
+          ) : (
+            <div className="flex items-center gap-3 rounded-xl border-[3px] border-border bg-raised p-5">
+              <Sparkles className="h-6 w-6 text-gold" />
+              <p className="font-bold">All trophies unlocked. Keep rushing!</p>
+            </div>
+          )}
+        </section>
       </div>
 
-      {/* Charts Row */}
-      <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        {/* Performance Over Time */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" as const }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                Performance Over Time
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={performanceData}>
-                    <defs>
-                      <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="month" className="text-xs" tick={{ fill: "var(--muted-foreground)" }} />
-                    <YAxis domain={[0, 100]} className="text-xs" tick={{ fill: "var(--muted-foreground)" }} />
-                    <RechartsTooltip
-                      contentStyle={{
-                        backgroundColor: "var(--card)",
-                        borderColor: "var(--border)",
-                        borderRadius: "8px",
-                        fontSize: "12px",
-                      }}
-                      formatter={(value: number | undefined) => [`${value ?? 0}%`, "Score"]}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="score"
-                      stroke="var(--primary)"
-                      strokeWidth={2}
-                      fill="url(#scoreGradient)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Category Performance */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" as const }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Target className="h-4 w-4 text-primary" />
-                Category Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={categoryPerformance} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
-                    <XAxis type="number" domain={[0, 100]} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
-                    <YAxis dataKey="name" type="category" width={90} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
-                    <RechartsTooltip
-                      contentStyle={{
-                        backgroundColor: "var(--card)",
-                        borderColor: "var(--border)",
-                        borderRadius: "8px",
-                        fontSize: "12px",
-                      }}
-                      formatter={(value: number | undefined) => [`${value ?? 0}%`, "Score"]}
-                    />
-                    <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={24}>
-                      {categoryPerformance.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Bottom Row */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Recent Quiz Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.4, ease: "easeOut" as const }}
-          className="lg:col-span-2"
-        >
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Clock className="h-4 w-4 text-primary" />
-                Recent Activity
-              </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => router.push("/results")}>
-                View all
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentAttempts.map((attempt) => {
-                  const quiz = quizzes.find((q) => q.id === attempt.quizId);
-                  if (!quiz) return null;
-                  const category = categories.find((c) => c.id === quiz.categoryId);
-                  return (
-                    <div
-                      key={attempt.id}
-                      className="flex items-center gap-4 rounded-lg border border-border p-3 transition-colors hover:bg-muted/50"
-                    >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-sm">
-                        {attempt.percentage}%
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-sm">{quiz.title}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{category?.name}</span>
-                          <span>·</span>
-                          <span>{formatDate(attempt.completedAt)}</span>
-                          <span>·</span>
-                          <span>{formatDuration(attempt.timeTaken)}</span>
-                        </div>
-                      </div>
-                      <Badge
-                        variant={attempt.passed ? "default" : "destructive"}
-                        className="shrink-0"
-                      >
-                        {attempt.passed ? "Passed" : "Failed"}
-                      </Badge>
-                    </div>
-                  );
-                })}
-                {recentAttempts.length === 0 && (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
-                    No quiz attempts yet. Start your first quiz!
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Score Distribution + Achievements */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.5, ease: "easeOut" as const }}
-          className="space-y-6"
-        >
-          {/* Score Distribution Pie */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Score Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[180px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={scoreDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={70}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {scoreDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip
-                      contentStyle={{
-                        backgroundColor: "var(--card)",
-                        borderColor: "var(--border)",
-                        borderRadius: "8px",
-                        fontSize: "12px",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                {scoreDistribution.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2 text-xs">
-                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
-                    <span className="text-muted-foreground">{item.name}</span>
+      <div className="mt-10 grid gap-8 lg:grid-cols-[1.35fr_1fr]">
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-xl text-spark">RECENT RUNS</h2>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/results")}>
+              History <ChevronRight className="ml-0.5 h-3 w-3" />
+            </Button>
+          </div>
+          <div className="overflow-hidden rounded-xl border-[3px] border-border bg-raised">
+            {recentAttempts.length === 0 && (
+              <p className="px-4 py-10 text-center font-bold text-muted-foreground">
+                No runs yet — hit PLAY!
+              </p>
+            )}
+            {recentAttempts.map((attempt) => {
+              const quiz = quizzes.find((q) => q.id === attempt.quizId);
+              if (!quiz) return null;
+              const category = categories.find((c) => c.id === quiz.categoryId);
+              return (
+                <button
+                  key={attempt.id}
+                  type="button"
+                  className="flex w-full cursor-pointer items-center gap-4 border-b-[3px] border-border px-4 py-4 text-left last:border-0 hover:bg-inset"
+                  onClick={() =>
+                    router.push(
+                      `/quiz/${attempt.quizId}/results?attemptId=${attempt.id}`
+                    )
+                  }
+                >
+                  <span
+                    className={cn(
+                      "flex h-14 w-14 shrink-0 items-center justify-center rounded-md border-[3px] font-display text-sm",
+                      attempt.passed
+                        ? "border-success bg-success/20 text-success"
+                        : "border-destructive bg-destructive/20 text-destructive"
+                    )}
+                  >
+                    {attempt.percentage}%
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold uppercase tracking-wide">
+                      {quiz.title}
+                    </p>
+                    <p className="truncate text-xs font-semibold text-muted-foreground">
+                      {category?.name} · {formatDate(attempt.completedAt)} ·{" "}
+                      {formatDuration(attempt.timeTaken)}
+                    </p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <Badge variant={attempt.passed ? "success" : "destructive"}>
+                    {attempt.passed ? "WIN" : "FAIL"}
+                  </Badge>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
-          {/* Recent Achievements */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Achievements</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => router.push("/achievements")}>
-                View all
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {unlockedAchievements.slice(0, 3).map((achievement) => (
-                  <div key={achievement.id} className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
-                      <Trophy className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                    </div>
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-xl text-primary">UP NEXT</h2>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/quizzes")}>
+              All <ChevronRight className="ml-0.5 h-3 w-3" />
+            </Button>
+          </div>
+          <ul className="overflow-hidden rounded-xl border-[3px] border-border bg-raised">
+            {recommended.map((quiz) => {
+              const category = categories.find((c) => c.id === quiz.categoryId);
+              return (
+                <li key={quiz.id} className="border-b-[3px] border-border last:border-0">
+                  <button
+                    type="button"
+                    className="flex w-full cursor-pointer items-start gap-3 px-4 py-4 text-left hover:bg-inset"
+                    onClick={() => router.push(`/quiz/${quiz.id}`)}
+                  >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{achievement.title}</p>
-                      <p className="truncate text-xs text-muted-foreground">{achievement.description}</p>
+                      <p className="truncate font-bold uppercase">{quiz.title}</p>
+                      <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
+                        {category?.name} · {quiz.totalQuestions}Q · {quiz.timeLimit}m
+                      </p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-md border-[2px] px-2 py-0.5 text-[10px] font-bold uppercase",
+                        getDifficultyColor(quiz.difficulty)
+                      )}
+                    >
+                      {quiz.difficulty}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       </div>
     </DashboardLayout>
   );
